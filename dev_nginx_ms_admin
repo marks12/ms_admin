@@ -1,0 +1,58 @@
+# Virtual Host configuration for example.com
+#
+# You can move that to a different file under sites-available/ and symlink that
+# to sites-enabled/ to enable it.
+#
+server {
+
+    listen 5000;
+
+    server_name msadmin.tsv;
+
+    gzip on;
+    gzip_disable "msie6";
+    gzip_types text/plain text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript application/javascript image/png image/jpeg image/j$
+
+    error_log  /var/log/nginx/msadmin.tsv.error.log error;
+    access_log     /var/log/nginx/ms_core.log combined;
+
+    root           /home/tsv/go/src/ms_admin/dist;
+    expires        max;
+
+    ssl         on;
+    ssl_certificate      /home/tsv/go/src/ms_admin/msadmin.tsv.crt;
+    ssl_certificate_key  /home/tsv/go/src/ms_admin/msadmin.tsv.key;
+
+# openssl req -new -sha256 -nodes -out msadmin.tsv.csr -newkey rsa:2048 -keyout msadmin.tsv.key -config <( cat csr_details.txt )
+# openssl x509 -req -in msadmin.tsv.csr -CA ../ms_core/rootCA.crt -CAkey ../ms_core/rootCA.key -CAcreateserial -out msadmin.tsv.crt -days 5000
+# chown tsv:tsv *msadmin.tsv*
+
+    location = /index.html {
+        # no try_files here
+    }
+
+    location /api {
+        proxy_pass     http://127.0.0.1:5001;
+        try_files      $uri @fallback;
+    }
+
+    location / {
+#        proxy_pass     http://127.0.0.1:5001;
+        try_files      $uri /index.html;
+    }
+
+    location /uploads/ {
+        root           /home/tsv/go/src/ms_admin/dist/;
+    }
+
+    location @fallback {
+        proxy_pass      http://127.0.0.1:5001;
+    }
+
+    location ~ /\.ht    {return 404;}
+    location ~ /\.svn/  {return 404;}
+    location ~ /\.git/  {return 404;}
+    location ~ /\.hg/   {return 404;}
+    location ~ /\.bzr/  {return 404;}
+
+}
